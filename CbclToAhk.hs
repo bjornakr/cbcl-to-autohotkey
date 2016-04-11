@@ -98,18 +98,23 @@
     printScript (Right cbclRows) = 
         putStrLn $ createScript (toKeyString (map toResponse2 (cbclRows !! 0)))
 
+
+    process :: String -> [[String]] -> IO ()
+    process respId rows = do
+        let onlyRespRow = filter (\x -> (x !! 1) == respId) rows
+        let orderedRows = reverse rows
+        let cbclRows = createCbclRows (findStartIndex (head orderedRows)) onlyRespRow
+        cbclResult cbclRows
+        printScript cbclRows
+        return ()
+
+
     parse :: String -> Handle -> [[String]] -> IO ()
     parse respId inHandle rows = do
         isEof <- hIsEOF inHandle
         if isEof
         then do
-            let onlyRespRow = filter (\x -> (x !! 1) == respId) rows
-            let orderedRows = reverse rows
-            let cbclRows = createCbclRows (findStartIndex (head orderedRows)) onlyRespRow
-            cbclResult cbclRows
-
-            printScript cbclRows
-            return ()
+            process respId rows
         else do
             row <- hGetLine inHandle
             parse respId inHandle ((splitRow row):rows)
@@ -124,7 +129,7 @@
     main = do
         args <- getArgs
         if ((length args) < 1)
-            then putStrLn "USAGE: cbcl2ahk <file> <respid>"
+            then putStrLn "USAGE: cbcl2ahk <input file> <respid> [--verbose]"
             else beginParsing (args !! 0)
 
 

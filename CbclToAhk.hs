@@ -7,7 +7,6 @@
     type Response = Maybe Int
     type CbclRow = [String]
     type Header = [String]
-    --type Options = (String, String, Bool)
     data ActivityType = SportsHobbies | GroupsJobs
 
     data Options = Options {
@@ -18,7 +17,6 @@
 
     startVariable = "CBCL4_2"
     numberOfCbclVariables = 211
-    --openEndedIndexes = []
 
     openEndedIndexes = [1, 3, 5, 12, 14, 16, 18, 25, 27, 29, 31, 35, 37, 39, 41, 51, 52, 59,
         61, 63, 65, 67, 69, 71, 72, 73, 83, 104, 116, 123, 137, 142, 145, 154, 159, 163, 168,
@@ -34,15 +32,6 @@
     toResponse ' ' = Nothing
     toResponse c = Just ((read (c:[]))::Int)
     
-    --toResponses :: String -> [Response]
-    --toResponses [] = []
-    --toResponses ";" = []
-    --toResponses (';':xs) = Nothing:(toResponses xs)
-    --toResponses (x:[]) = (toResponse x):[]
-    --toResponses (x:';':';':xs) = (toResponse x):Nothing:(toResponses xs)
-    --toResponses (x:';':xs) = (toResponse x):(toResponses xs)
-    --toResponses (x:xs) = error $ "Error trying to parse: " ++ (x:xs)
-
     toResponse2 :: String -> Response
     toResponse2 "" = Nothing
     toResponse2 s = Just ((read s)::Int)
@@ -74,8 +63,6 @@
     dropOpenEnded :: Int -> CbclRow -> CbclRow
     dropOpenEnded _ [] = []
     dropOpenEnded index (item:items) =        
-        --let openEndedIndexes = [5, 7, 9, 18, 20, 22, 31, 33, 35, 41, 43, 45, 56, 63, 65, 67, 69, 73, 75] in
-        --let openEndedIndexes = [9, 30, 42, 49, 63, 68, 71, 80, 85, 89, 94, 97, 102, 104, 106, 114, 123, 129] in
         if elem index openEndedIndexes then dropOpenEnded (index+1) items
         else (item:(dropOpenEnded (index+1) items))
 
@@ -84,27 +71,6 @@
 
     extractCbcl :: Int -> [String] -> CbclRow
     extractCbcl startIndex row = dropOpenEnded 0 (take numberOfCbclVariables (drop startIndex row))
-        -- dropOpenEnded 0 (take numberOfCbclVariables (drop startIndex row))
-
-
-    --prettyPrint :: Int -> [String] -> IO ()
-    --prettyPrint _ [] = return ()
-    --prettyPrint index (s:ss) = do
-    --    putStrLn $ (show index) ++ ": " ++ s
-    --    prettyPrint (index+1) ss
-
-    --prettyPrint2 :: Int -> String -> String
-    --prettyPrint2 i s = (show i) ++ ": " ++ s
-
-    --createCbclRow :: Int -> [String] -> [CbclRow]
-    --createCbclRows startIndex row = map (extractCbcl startIndex) (dropEmptyRows rows)
-
-    --selectRespRow :: String -> [CbclRow] -> Either String CbclRow
-    --selectRespRow respId = 
-
-    --cbclResult :: Either String [CbclRow] -> IO ()
-    --cbclResult (Left msg) = error $ "ERROR: " ++ msg
-    --cbclResult (Right cbclRows) = mapM_ putStrLn (map prettyPrint (zip [0..] (cbclRows !! 0)))
 
 
     prettyPrint :: (Int, String, String) -> String
@@ -113,88 +79,7 @@
     printScript :: Either String [CbclRow] -> IO()
     printScript (Left msg) = error $ "ERROR: " ++ msg
     printScript (Right cbclRows) = 
-        --putStrLn $ createScript (toKeyString (map toResponse2 (cbclRows !! 0)))
         putStrLn $ show $ toResponses (cbclRows !! 0)
-
-
-    process :: Options -> [[String]] -> IO ()
-    process options rows = do
-        let onlyRespRow = concat $ filter (\x -> (x !! 1) == (respId options)) rows
-        if (length onlyRespRow == 0) 
-            then error $ "ERROR: Could not find data for RespId = " ++ (respId options) ++ "."
-            else return ()
-        let orderedRows = reverse (dropEmptyRows rows)
-
-        startIndex <- dealWithMaybe 
-            (findStartIndex (head orderedRows))
-            ("Could not find CBCL items (starting with " ++ startVariable ++ ").")
-        
-        let headerCbcl = extractCbcl startIndex (head orderedRows)
-        let respCbcl = extractCbcl startIndex (onlyRespRow)
-
-        mapM_ putStrLn (map prettyPrint (zip3 [0..] headerCbcl respCbcl))
-
-        --let a = toResponses respCbcl
-        let a = toResponses respCbcl
-        putStrLn $ show a
-        --putStrLn $ show a
-
-        let b = createScript (toKeyString a)
-
-        putStrLn $ b
-        --let responses = toResponses cbclRows
-        --if (isSetVerbose)
-            --then cbclResult cbclRows
-            --else return ()
-        --printScript cbclRows
-        return ()
-
-
-    dealWithEither :: Either String [CbclRow] -> IO [CbclRow]
-    dealWithEither (Left msg) = do
-        putStrLn msg
-        exitFailure
-    dealWithEither (Right a) = return a
-        
-    dealWithMaybe :: Maybe Int -> String -> IO Int
-    dealWithMaybe Nothing msg = do
-        putStrLn msg
-        exitFailure
-    dealWithMaybe (Just a) _ = return a
-
-
-    parse :: Options -> Handle -> [[String]] -> IO ()
-    parse options inHandle rows = do
-        isEof <- hIsEOF inHandle
-        if isEof
-        then do
-            process options rows
-        else do
-            row <- hGetLine inHandle
-            parse options inHandle ((splitRow row):rows)
-
-
-
-    beginParsing options = do
-        fileHandle <- openFile (fileName options) ReadMode
-        parse options fileHandle []
-        hClose fileHandle
-
-    main = do
-        --putStrLn $ toKeyString (parseActivities 1 (toResponses ["3", "1", "2"]))
-        args <- getArgs
-        if ((length args) < 2)
-            then putStrLn "USAGE: cbcl2ahk <input file> <respid> [--verbose]"
-            else do
-                let options = Options {
-                    fileName = args !! 0,
-                    respId = args !! 1,
-                    verbose = (length args) >= 3 && (args !! 2 == "--verbose")
-                }
-                --let verbose = ((length args) >= 3 && (args !! 2 == "--verbose"))
-                beginParsing options
-
-
 
 
     sumResponses :: [Response] -> Int
@@ -210,10 +95,6 @@
     filterOutEmptyActivities GroupsJobs n@noOfActivities r@responsesForActivity =
         (filterOutEmptyActivities GroupsJobs (n-1) r) ++ ((r !! (n-1)):[])
 
-
-    --procAct 3 resp = (resp !! 5):(resp !! 8):(procAct 2 resp)
-    --procAct 2 resp = (resp !! 4):(resp !! 7):(procAct 1 resp)
-    --procAct 1 resp = (resp !! 3):(resp !! 6):(procAct 0 resp)
 
     processActivity :: ActivityType -> [Response] -> [Response]
     processActivity activityType activityResponses =
@@ -241,29 +122,82 @@
     toBaseZeroScale Nothing = Nothing
     toBaseZeroScale (Just x) = Just (x-1)
 
---START_INDEX = "CBCL1t1_1"
+    dealWithEither :: Either String [CbclRow] -> IO [CbclRow]
+    dealWithEither (Left msg) = do
+        putStrLn msg
+        exitFailure
+    dealWithEither (Right a) = return a
+        
+    dealWithMaybe :: Maybe Int -> String -> IO Int
+    dealWithMaybe Nothing msg = do
+        putStrLn msg
+        exitFailure
+    dealWithMaybe (Just a) _ = return a
 
---GRAVEYARD
+    process :: Options -> [[String]] -> IO ()
+    process options rows = do
+        let onlyRespRow = concat $ filter (\x -> (x !! 1) == (respId options)) rows
+        if (length onlyRespRow == 0) 
+            then error $ "ERROR: Could not find data for RespId = " ++ (respId options) ++ "."
+            else return ()
+        let orderedRows = reverse (dropEmptyRows rows)
 
-            --let z = toResponse2 (cbclRows !! 50)
-            --if (z == Left msg)
-            --    then putStrLn msg
-            --    else putStrLn $ createScript (toKeyString z)
-            --toResponse2 
-            --if (cbclRows == Left a) 
-            --    then putStrLn a
-            --    else
-            --        let a = map prettyPrint (zip [0..] (head cbclRows))
+        startIndex <- dealWithMaybe 
+            (findStartIndex (head orderedRows))
+            ("Could not find CBCL items (starting with " ++ startVariable ++ ").")
+        
+        let headerCbcl = extractCbcl startIndex (head orderedRows)
+        let respCbcl = extractCbcl startIndex (onlyRespRow)
+        let script = createScript (toKeyString (toResponses respCbcl))
 
-                --extractCbcl dropEmptyRows reverse rows
-            --parse inHandle ((extractCbcl (parseRow row)):rows)
-            --prettyPrint 0 (head (reverse (dropEmptyRows rows)))
-            --let a = map prettyPrint (zip [0..] (head (reverse (dropEmptyRows rows))))
-            --mapM_ putStrLn a
-            --prettyPrint 0 (dropOpenEnded 0 (head (reverse (dropEmptyRows rows))))
+        if (verbose options) 
+            then do
+                mapM_ putStrLn (map prettyPrint (zip3 [0..] headerCbcl respCbcl))
+                putStrLn $ script
+            else 
+                return ()
+        
+        let outfileName = "cbcl-" ++ (respId options) ++ ".ahk"
+        putStrLn $ "> Writing AutoHotKey script to: " ++ outfileName
+        writeToFile outfileName script
+        return ()
 
-        --let a = toResponses "0;1;2;;0;1;2; ;0;1;2;0;1;2;3;1;2;3;4;1;2;3;1;2;3;1;4;2;3;2"
-        --let b = parseActivities 2 (toResponses "3;;2;1;2;3;4;5;6;9;9;")
-        --putStrLn $ toKeyString a
-        --putStrLn $ toKeyString b
-        --putStrLn $ createScript $ toKeyString a
+
+    writeToFile :: String -> String -> IO ()
+    writeToFile fileName content = do
+        fileHandle <- openFile fileName WriteMode
+        hPutStrLn fileHandle content
+        hClose fileHandle
+        return ()
+
+    parse :: Handle -> [[String]] -> IO [CbclRow]
+    parse inHandle rows = do
+        isEof <- hIsEOF inHandle
+        if isEof
+        then 
+            return rows
+        else do
+            row <- hGetLine inHandle
+            parse inHandle ((splitRow row):rows)
+
+    beginParsing options = do
+        let infileName = fileName options
+        putStrLn $ "> Reading from: " ++ infileName
+        fileHandle <- openFile (fileName options) ReadMode
+        rows <- parse fileHandle []
+        hClose fileHandle
+        process options rows
+
+    main = do
+        putStrLn "\nCBCL TO AutoHotKey v0.9.0"
+        putStrLn "-------------------------"
+        args <- getArgs
+        if ((length args) < 2)
+            then putStrLn "USAGE: cbcl2ahk <input file> <respid> [--verbose]"
+            else do
+                let options = Options {
+                    fileName = args !! 0,
+                    respId = args !! 1,
+                    verbose = (length args) >= 3 && (args !! 2 == "--verbose")
+                }
+                beginParsing options

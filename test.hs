@@ -25,57 +25,105 @@ module CbclToAhk_Test where
         ]
 
     
+    --filterOutEmptyActivities_NoResponses_Empty =
+    --    TestCase $ assertEqual "filterOutEmptyActivities_NoResponses_Empty" [] (filterOutEmptyActivities SportsHobbies 3 [])
 
-    toResponse_space_nothing =
-        TestCase $ assertEqual "toResponse_space_nothing" Nothing (toResponse ' ')
-    toResponse_digit_validResponse =
-        TestCase $ assertEqual "toResponse_digit_validResponse" (Just 1) (toResponse '1')
+    filterOutEmptyActivities_AllSports_AllItemsInCorrectOrder =
+        TestCase $ assertEqual
+            "filterOutEmptyActivities_AllSports_AllItemsInCorrectOrder"
+            [Just 1, Just 4, Just 2, Just 5, Just 3, Just 6]
+            (filterOutEmptyActivities SportsHobbies 3 [Just 1, Just 2, Just 3, Just 4, Just 5, Just 6])
 
-    toResponse_testList = TestList [
-        toResponse_space_nothing,
-        toResponse_digit_validResponse
+    filterOutEmptyActivities_OneSport_AllItemsInCorrectOrder =
+        TestCase $ assertEqual
+            "filterOutEmptyActivities_OneSport_AllItemsInCorrectOrder"
+            [Just 1, Just 4]
+            (filterOutEmptyActivities SportsHobbies 1 [Just 1, Nothing, Nothing, Just 4, Nothing, Nothing])
+    
+    filterOutEmptyActivities_AllGroups_AllItemsInCorrectOrder =
+        TestCase $ assertEqual
+            "filterOutEmptyActivities_AllGroups_AllItemsInCorrectOrder"
+            [Just 1, Just 2, Just 3]
+            (filterOutEmptyActivities GroupsJobs 3 [Just 1, Just 2, Just 3])
+
+    filterOutEmptyActivities_OneGroup_AllItemsInCorrectOrder =
+        TestCase $ assertEqual
+            "filterOutEmptyActivities_OneGroup_AllItemsInCorrectOrder"
+            [Just 1]
+            (filterOutEmptyActivities GroupsJobs 1 [Just 1, Nothing, Nothing])
+
+    processActivity_AllSports_AllItemsInCorrectOrder =
+        TestCase $ assertEqual
+            ""
+            [Just 3, Just 1, Just 4, Just 2, Just 5, Just 3, Just 6]
+            (processActivity SportsHobbies [Just 1, Just 1, Just 1, Just 1, Just 2, Just 3, Just 4, Just 5, Just 6])
+
+    processActivity_OneSport_AllItemsInCorrectOrder =
+        TestCase $ assertEqual
+            ""
+            [Just 1, Just 1, Just 4]
+            (processActivity SportsHobbies [Just 1, Just 0, Just 0, Just 1, Nothing, Nothing, Just 4, Nothing, Nothing])
+
+    activities_testList = TestList [
+        filterOutEmptyActivities_AllSports_AllItemsInCorrectOrder,
+        filterOutEmptyActivities_OneSport_AllItemsInCorrectOrder,
+        filterOutEmptyActivities_AllGroups_AllItemsInCorrectOrder,
+        filterOutEmptyActivities_OneGroup_AllItemsInCorrectOrder,
+        processActivity_AllSports_AllItemsInCorrectOrder,
+        processActivity_OneSport_AllItemsInCorrectOrder
         ]
 
+    --toResponse_space_nothing =
+    --    TestCase $ assertEqual "toResponse_space_nothing" Nothing (toResponse ' ')
+    --toResponse_digit_validResponse =
+    --    TestCase $ assertEqual "toResponse_digit_validResponse" (Just 1) (toResponse '1')
 
-    toResponses_emptyString_emptyList =
-        TestCase $ assertEqual "toResponses_emptyString_emptyList"
-            [] (toResponses "")
-    toResponses_singleSeparator_emptyList =
-        TestCase $ assertEqual "toResponses_singleSeparator_emptyList"
-            [] (toResponses ";")
-    toResponses_twoSeparators_singleNothing =
-        TestCase $ assertEqual "toResponses_twoSeparators_singleNothing"
-            [Nothing] (toResponses ";;")
-    toResponses_singleDigit_singleResponse =
-        TestCase $ assertEqual "toResponses_singleDigit_singleResponse"
-            [Just 1] (toResponses "1")
-    toResponses_twoSeparatedDigits_twoValidResponses =
-        TestCase $ assertEqual "toResponses_twoSeparatedDigits_twoValidResponses"
-            [Just 1, Just 2] (toResponses "1;2")
-    toResponses_digitAndSeparator_singleResponse =
-        TestCase $ assertEqual "toResponses_digitAndSeparator_singleResponse"
-            [Just 1] (toResponses "1;")
-    toResponses_digitSeparatorSeparator_validResponseAndNothing =
-        TestCase $ assertEqual "toResponses_digitSeparatorSeparator_validResponseAndNothing"
-            [Just 1, Nothing] (toResponses "1;;")
-    toResponses_digitSeparatorSeparatorDigit_validResponseNothingValidResponse =
-        TestCase $ assertEqual "toResponses_digitSeparatorSeparatorDigit_validResponseNothingValidResponse"
-            [Just 1, Nothing, Just 2] (toResponses "1;;2")
+    --toResponse_testList = TestList [
+    --    toResponse_space_nothing,
+    --    toResponse_digit_validResponse
+    --    ]
 
-    toResponses_testList = TestList [
-        toResponses_emptyString_emptyList,
-        toResponses_singleSeparator_emptyList,
-        toResponses_twoSeparators_singleNothing,
-        toResponses_singleDigit_singleResponse,
-        toResponses_twoSeparatedDigits_twoValidResponses,
-        toResponses_digitAndSeparator_singleResponse,
-        toResponses_digitSeparatorSeparator_validResponseAndNothing,
-        toResponses_digitSeparatorSeparatorDigit_validResponseNothingValidResponse
-        ]
+
+    --toResponses_emptyString_emptyList =
+    --    TestCase $ assertEqual "toResponses_emptyString_emptyList"
+    --        [] (toResponses "")
+    --toResponses_singleSeparator_emptyList =
+    --    TestCase $ assertEqual "toResponses_singleSeparator_emptyList"
+    --        [] (toResponses ";")
+    --toResponses_twoSeparators_singleNothing =
+    --    TestCase $ assertEqual "toResponses_twoSeparators_singleNothing"
+    --        [Nothing] (toResponses ";;")
+    --toResponses_singleDigit_singleResponse =
+    --    TestCase $ assertEqual "toResponses_singleDigit_singleResponse"
+    --        [Just 1] (toResponses "1")
+    --toResponses_twoSeparatedDigits_twoValidResponses =
+    --    TestCase $ assertEqual "toResponses_twoSeparatedDigits_twoValidResponses"
+    --        [Just 1, Just 2] (toResponses "1;2")
+    --toResponses_digitAndSeparator_singleResponse =
+    --    TestCase $ assertEqual "toResponses_digitAndSeparator_singleResponse"
+    --        [Just 1] (toResponses "1;")
+    --toResponses_digitSeparatorSeparator_validResponseAndNothing =
+    --    TestCase $ assertEqual "toResponses_digitSeparatorSeparator_validResponseAndNothing"
+    --        [Just 1, Nothing] (toResponses "1;;")
+    --toResponses_digitSeparatorSeparatorDigit_validResponseNothingValidResponse =
+    --    TestCase $ assertEqual "toResponses_digitSeparatorSeparatorDigit_validResponseNothingValidResponse"
+    --        [Just 1, Nothing, Just 2] (toResponses "1;;2")
+
+    --toResponses_testList = TestList [
+    --    toResponses_emptyString_emptyList,
+    --    toResponses_singleSeparator_emptyList,
+    --    toResponses_twoSeparators_singleNothing,
+    --    toResponses_singleDigit_singleResponse,
+    --    toResponses_twoSeparatedDigits_twoValidResponses,
+    --    toResponses_digitAndSeparator_singleResponse,
+    --    toResponses_digitSeparatorSeparator_validResponseAndNothing,
+    --    toResponses_digitSeparatorSeparatorDigit_validResponseNothingValidResponse
+    --    ]
 
 
     main = runTestTT $ TestList [
         toKeyString_testList,
-        toResponse_testList,
-        toResponses_testList
+        activities_testList
+        --toResponse_testList,
+        --toResponses_testList
         ]

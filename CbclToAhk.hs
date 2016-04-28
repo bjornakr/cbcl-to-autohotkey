@@ -2,6 +2,7 @@ import Data.List.Split
 import System.IO
 import System.Environment
 import System.Exit
+import Control.Monad (when)
 
 type Response = Maybe Int
 type CbclRow = [String]
@@ -124,12 +125,9 @@ process options rows = do
     let respCbcl = extractCbcl startIndex (onlyRespRow)
     let script = createScript (toKeyString (toResponses respCbcl))
 
-    if (verbose options) 
-        then do
-            mapM_ putStrLn (map prettyPrint (zip3 [0..] headerCbcl respCbcl))
-            putStrLn $ script
-        else 
-            return ()
+    when (verbose options) $ do
+        mapM_ putStrLn (map prettyPrint (zip3 [0..] headerCbcl respCbcl))
+        putStrLn $ script
     
     let outfileName = "cbcl-" ++ (respId options) ++ ".ahk"
     putStrLn $ "> Writing AutoHotKey script to: " ++ outfileName
@@ -139,9 +137,7 @@ process options rows = do
 
 writeToFile :: String -> String -> IO ()
 writeToFile fileName content = do
-    fileHandle <- openFile fileName WriteMode
-    hPutStrLn fileHandle content
-    hClose fileHandle
+    withFile fileName WriteMode (\handle -> do hPutStrLn handle content)
     return ()
 
 parse :: Handle -> [[String]] -> IO [CbclRow]
@@ -167,8 +163,9 @@ main = do
     putStrLn "-------------------------"
     args <- getArgs
     if ((length args) < 2)
-        then 
-            putStrLn "USAGE: cbcl2ahk <input file> <respid> [--verbose]"
+        then do
+            progName <- getProgName
+            putStrLn $ "USAGE: " ++ progName ++ " <input file> <respid> [--verbose]"
         else do
             let options = Options {
                 fileName = args !! 0,

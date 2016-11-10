@@ -1,9 +1,11 @@
 import Data.List.Split
 import Data.Char (toLower)
 import System.IO
-import System.Environment
+import System.Environment (getArgs)
 import System.Exit
 import Control.Monad (when)
+
+version = "1.0.1"
 
 type Response = Maybe Int
 type CbclRow = [String]
@@ -112,7 +114,7 @@ toResponses Ysr row =
             (proc GroupsJobs (take 6 (drop 18 raw)))  ++
             (proc GroupsJobs (take 6 (drop 24 raw))) ++
             (map toBaseZeroScale (take 2 (drop 30 raw))) ++
-            (map dropNotApplicable (take 1 (drop 32 raw))) ++
+            (map toBaseZeroScale (map dropNotApplicable (take 1 (drop 32 raw)))) ++
             (map toBaseZeroScale (take 11 (drop 33 raw))) ++
             (drop 44 raw)
 
@@ -197,7 +199,7 @@ parseAndProcess options = do
     process options rows
 
 main = do
-    putStrLn "\nCBCL TO AutoHotKey v1.0.0"
+    putStrLn $ "\nCBCL TO AutoHotKey v" ++ version
     putStrLn "-------------------------"
     args <- getArgs
     if ((length args) < 3)

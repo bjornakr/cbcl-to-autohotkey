@@ -48,14 +48,8 @@ toResponse s = Just ((read s)::Int)
 createScript :: String -> String
 createScript keyString = "SetKeyDelay, 300\n^b::\n   Send, " ++ keyString ++ "\nReturn"
 
-findStartIndex' :: FormType -> [(Int, String)] -> Maybe Int
-findStartIndex' _ [] = Nothing
-findStartIndex' formType ((i, s):xs)
-    | s == startVariable formType = Just i
-    | otherwise = findStartIndex' formType xs
-
 findStartIndex :: FormType -> Header -> Maybe Int
-findStartIndex formType h = findStartIndex' formType (zip [0..] h)
+findStartIndex formType h = findIndex (startVariable formType) h
 
 findIndex :: String -> Header -> Maybe Int
 findIndex var header =
@@ -63,8 +57,6 @@ findIndex var header =
     case (dropWhile (\(i, x) -> x /= var) indexedHeader) of
         [] -> Nothing
         ((i2, x2):xs) -> Just i2
-
-
 
 dropEmptyRows :: [CbclRow] -> [CbclRow]
 dropEmptyRows [] = []    
@@ -149,12 +141,6 @@ toBaseZeroScale :: Response -> Response
 toBaseZeroScale Nothing = Nothing
 toBaseZeroScale (Just x) = Just (x-1)
 
-valueOrError :: Maybe Int -> String -> IO Int
-valueOrError Nothing msg = do
-    putStrLn msg
-    exitFailure
-valueOrError (Just a) _ = return a
-
 process :: Options -> [[String]] -> IO ()
 process options rows = do
     let formName = map toLower (formType options)
@@ -169,10 +155,9 @@ process options rows = do
     let orderedRows = reverse (dropEmptyRows rows)
     let header = head orderedRows
 
-    let respVarIndex =
-            fromMaybe
-                (error $ "Could not find column " ++ respVariable)
-                (findIndex respVariable header)
+    let respVarIndex = fromMaybe
+            (error $ "Could not find column " ++ respVariable)
+            (findIndex respVariable header)
         
 
     let childrenOrParentsRows = filter (\x -> (x !! respVarIndex) == (respType fType)) rows
@@ -181,9 +166,10 @@ process options rows = do
         then error $ "ERROR: Could not find data for ID = " ++ (respId options) ++ "."
         else return ()
 
-    startIndex <- valueOrError 
-        (findStartIndex fType header)
-        ("Could not find CBCL items (starting with " ++ (startVariable fType) ++ ").")
+    let startIndex = fromMaybe 
+            (error $ "Could not find CBCL items (starting with " ++ (startVariable fType) ++ ").")
+            (findStartIndex fType header)
+        
     
     let headerCbcl = extractCbcl fType startIndex (head orderedRows)
     let respCbcl = extractCbcl fType startIndex (onlyRespRow)

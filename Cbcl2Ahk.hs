@@ -1,7 +1,8 @@
 import Data.List.Split
-import Data.Char (toLower)
+import Data.Char (toLower, toUpper)
+import Data.Maybe (fromMaybe)
 import System.IO
-import System.Environment (getArgs)
+import System.Environment (getArgs, getProgName)
 import System.Exit
 import Control.Monad (when)
 
@@ -22,6 +23,8 @@ data Options = Options {
 
 startVariable Cbcl = "CBCL4_2"
 startVariable Ysr = "q7_2"
+respVariable = "Resp_For_or_Child"
+
 
 numberOfCbclVariables Cbcl = 212
 numberOfCbclVariables Ysr = 204
@@ -53,6 +56,15 @@ findStartIndex' formType ((i, s):xs)
 
 findStartIndex :: FormType -> Header -> Maybe Int
 findStartIndex formType h = findStartIndex' formType (zip [0..] h)
+
+findIndex :: String -> Header -> Maybe Int
+findIndex var header =
+    let indexedHeader = zip [0..] header in
+    case (dropWhile (\(i, x) -> x /= var) indexedHeader) of
+        [] -> Nothing
+        ((i2, x2):xs) -> Just i2
+
+
 
 dropEmptyRows :: [CbclRow] -> [CbclRow]
 dropEmptyRows [] = []    
@@ -151,14 +163,26 @@ process options rows = do
                     "ysr" -> Ysr
                     invalid -> error $ "ERROR: Invalid form type '" ++ invalid ++ "'. 'cbcl' or 'ysr' required."
 
-    let onlyRespRow = concat $ filter (\x -> (x !! 1) == (respId options)) rows
-    if (length onlyRespRow == 0) 
-        then error $ "ERROR: Could not find data for RespId = " ++ (respId options) ++ "."
-        else return ()
+    let respType formType = case formType of
+                                Cbcl -> "F"
+                                Ysr  -> "C"
     let orderedRows = reverse (dropEmptyRows rows)
+    let header = head orderedRows
+
+    let respVarIndex =
+            fromMaybe
+                (error $ "Could not find column " ++ respVariable)
+                (findIndex respVariable header)
+        
+
+    let childrenOrParentsRows = filter (\x -> (x !! respVarIndex) == (respType fType)) rows
+    let onlyRespRow = concat $ filter (\x -> (x !! 15) == (respId options)) childrenOrParentsRows
+    if (length onlyRespRow == 0) 
+        then error $ "ERROR: Could not find data for ID = " ++ (respId options) ++ "."
+        else return ()
 
     startIndex <- valueOrError 
-        (findStartIndex fType (head orderedRows))
+        (findStartIndex fType header)
         ("Could not find CBCL items (starting with " ++ (startVariable fType) ++ ").")
     
     let headerCbcl = extractCbcl fType startIndex (head orderedRows)
@@ -213,7 +237,7 @@ main = do
             let options = Options {                
                 formType = args !! 0,
                 fileName = args !! 1,
-                respId = args !! 2,
+                respId = map toUpper (args !! 2),
                 verbose = (length args) >= 4 && (args !! 3 == "--verbose")
             }
             parseAndProcess options

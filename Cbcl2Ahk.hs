@@ -6,7 +6,7 @@ import System.Environment (getArgs, getProgName)
 import System.Exit
 import Control.Monad (when)
 
-version = "1.0.1"
+version = "2.0.0"  -- Revision 2018-02 compliant
 
 type Response = Maybe Int
 type CbclRow = [String]
@@ -25,16 +25,25 @@ startVariable Cbcl = "CBCL4_2"
 startVariable Ysr = "q7_2"
 respVariable = "Resp_For_or_Child"
 
-
-numberOfCbclVariables Cbcl = 212
+numberOfCbclVariables Cbcl = 220 -- 230 --212
 numberOfCbclVariables Ysr = 204
 
-openEndedIndexes Cbcl = [1, 3, 5, 12, 14, 16, 18, 25, 27, 29, 31, 35, 37, 39, 41, 51, 52, 59,
-    61, 63, 65, 67, 69, 71, 72, 73, 83, 104, 116, 123, 137, 142, 145, 154, 159, 163, 168,
-    171, 176, 178, 180, 188, 197, 203]
+openEndedIndexes Cbcl = [
+    1, 3, 5, 12, 14, 16, 18, 25, 27, 29, 31, 35, 37, 39, 41, 51, 52,
+    53, 54, 55, 56, 57, 58, 59, 60,
+    67, 69, 71, 73, 75, 76,
+    --77, 79, 80, 81, 91, 112, 124, 131, 145, 150, 153, 162, 167, 171, 176, 179, 184, 186, 188, 196, 205, 211
+    78, 80, 81, 82, 92, 113, 125, 132, 146, 151, 154, 163, 168, 172, 177, 180, 185, 187, 189, 197, 206, 212
+    --59,
+    --61, 63, 65, 67, 69, 71, 72, 73, 83, 104, 116, 123, 137, 142, 145, 154, 159, 163, 168,
+    --171, 176, 178, 180, 188, 197, 203
+    ]
+
 openEndedIndexes Ysr = [1, 3, 5, 12, 14, 16, 18, 25, 27, 29, 31, 35, 37, 39, 41,
     51, 52, 59, 61, 63, 64, 65, 66, 69, 77, 98, 110, 117, 131, 136, 139,
     148, 153, 161, 164, 169, 171, 173, 181, 190, 196]
+
+
 
 toKeyString :: [Response] -> String
 toKeyString [] = ""
@@ -155,15 +164,23 @@ process options rows = do
     let orderedRows = reverse (dropEmptyRows rows)
     let header = head orderedRows
 
-    let respVarIndex = fromMaybe
+    let respVarIndex = fromMaybe -- RespForOrChild
             (error $ "Could not find column " ++ respVariable)
             (findIndex respVariable header)
         
 
     let childrenOrParentsRows = filter (\x -> (x !! respVarIndex) == (respType fType)) rows
-    let onlyRespRow = concat $ filter (\x -> (x !! 15) == (respId options)) childrenOrParentsRows
-    if (length onlyRespRow == 0) 
-        then error $ "ERROR: Could not find data for ID = " ++ (respId options) ++ "."
+    let onlyRespRow = concat $ filter (\x -> (x !! 16) == (respId options)) childrenOrParentsRows
+
+    if (length onlyRespRow == 0)
+        then do
+            let yyy = (rows !! 2) !! 10
+            putStrLn(yyy)
+
+            let xxx = filter (\x -> (x !! 10) == "F") rows
+            -- let xxx = (rows !! 2) !! respVarIndex
+            putStrLn(show (head xxx)) 
+            error $ "ERROR: Could not find data for ID = " ++ (respId options) ++ "."
         else return ()
 
     let startIndex = fromMaybe 

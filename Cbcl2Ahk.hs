@@ -6,7 +6,7 @@ import System.Environment (getArgs, getProgName)
 import System.Exit
 import Control.Monad (when)
 
-version = "2.0.0"  -- Revision 2018-02 compliant
+version = "2.0.1"  -- Revision 2018-02 compliant
 
 type Response = Maybe Int
 type CbclRow = [String]
@@ -166,16 +166,10 @@ process options rows = do
         
 
     let childrenOrParentsRows = filter (\x -> (x !! respVarIndex) == (respType fType)) rows
-    let onlyRespRow = concat $ filter (\x -> (x !! 16) == (respId options)) childrenOrParentsRows
+    let onlyRespRow = concat $ filter (\x -> (x !! 9) == (respId options)) childrenOrParentsRows
 
     if (length onlyRespRow == 0)
         then do
-            let yyy = (rows !! 2) !! 10
-            putStrLn(yyy)
-
-            let xxx = filter (\x -> (x !! 10) == "F") rows
-            -- let xxx = (rows !! 2) !! respVarIndex
-            putStrLn(show (head xxx)) 
             error $ "ERROR: Could not find data for ID = " ++ (respId options) ++ "."
         else return ()
 
